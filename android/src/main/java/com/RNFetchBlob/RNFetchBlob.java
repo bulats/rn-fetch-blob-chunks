@@ -5,6 +5,11 @@ import android.app.DownloadManager;
 import android.content.Intent;
 import android.net.Uri;
 
+import android.support.annotation.Nullable;
+import android.util.Log;
+
+import com.RNFetchBlob.Utils.EncodingResolver;
+import com.RNFetchBlob.Utils.RNFBCookieJar;
 import com.facebook.react.bridge.ActivityEventListener;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.LifecycleEventListener;
@@ -314,6 +319,23 @@ public class RNFetchBlob extends ReactContextBaseJavaModule {
         });
     }
 
+    @ReactMethod
+    public void readChunk(final String path, final String encoding, final int offset, final int length, final Promise promise) {
+        fsThreadPool.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Object result = RNFetchBlobFS.readChunk(path, encoding, offset, length);
+                    EncodingResolver.resolve(promise, encoding, result);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    promise.reject(e.getMessage(), e.getMessage()) ;
+                }
+            }
+        });
+
+    }
+
 
     @ReactMethod
     public void enableUploadProgressReport(String taskId, int interval, int count) {
@@ -332,6 +354,27 @@ public class RNFetchBlob extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void read(final String path, final String encoding, final int offset, final int length, final @Nullable String dest, final Promise promise) {
+        fsThreadPool.execute(new Runnable() {
+            @Override
+            public void run() {
+                RNFetchBlobFS fs = new RNFetchBlobFS(RCTContext);
+                fs.read(path, encoding, offset, length, dest, promise);
+            }
+        });
+    }
+
+    @ReactMethod
+    public void write(final String path, final String data, final String encoding, final int offset, final int length, final Promise promise) {
+        fsThreadPool.execute(new Runnable() {
+            @Override
+            public void run() {
+                RNFetchBlobFS fs = new RNFetchBlobFS(RCTContext);
+                fs.write(path, encoding, data, offset, length, promise);
+            }
+        });
+    }
+
     public void getContentIntent(String mime, Promise promise) {
         Intent i = new Intent(Intent.ACTION_GET_CONTENT);
         if(mime != null)

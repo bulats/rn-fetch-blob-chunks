@@ -10,8 +10,10 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.StatFs;
 import android.os.SystemClock;
+import android.support.annotation.Nullable;
 import android.util.Base64;
 
+import com.RNFetchBlob.Utils.DataConverter;
 import com.RNFetchBlob.Utils.PathResolver;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
@@ -22,8 +24,10 @@ import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -918,4 +922,24 @@ public class RNFetchBlobFS {
             return PathResolver.getRealPathFromURI(RNFetchBlob.RCTContext, uri);
     }
 
+    static Object readChunk(String path, String encoding, int offset, int length) throws Exception {
+        path = normalizePath(path);
+        if(path == null)
+            return null;
+        byte [] buffer = new byte[length];
+        InputStream in = new FileInputStream(path);
+        int read = in.read(buffer, offset, length);
+
+        if(encoding.equalsIgnoreCase(RNFetchBlobConst.RNFB_RESPONSE_BASE64)) {
+            return DataConverter.byteToBase64(buffer, read);
+        }
+        else if(encoding.equalsIgnoreCase(RNFetchBlobConst.RNFB_RESPONSE_UTF8)) {
+            return DataConverter.byteToUTF8(buffer, read);
+        }
+        else if(encoding.equalsIgnoreCase(RNFetchBlobConst.RNFB_RESPONSE_ASCII)) {
+            return DataConverter.byteToRCTArray(buffer, read);
+        }
+        return null;
+
+    }
 }
